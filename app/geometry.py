@@ -133,17 +133,18 @@ def mesh_for_panel(x, y, z, info, flat=False):
             at,bt = v(a,thickness),v(b,thickness)
             faces.extend(((ab,bb,bt),(ab,bt,at)))
     mesh = trimesh.Trimesh(vertices=np.asarray(vertices),faces=np.asarray(faces),process=True)
-    mesh.fix_normals()
+    # The face is one Polygon, so the extruded panel has one connected body.
+    mesh.fix_normals(multibody=False)
     order = {'x': (0,1,2), 'y': (1,0,2), 'z': (1,2,0)}[axis]
     if order != (0,1,2):
         mesh.vertices = mesh.vertices[:,order]
-        mesh.fix_normals()
+        mesh.fix_normals(multibody=False)
     if not np.allclose(mesh.bounds, [[0,0,0],[x,y,z]],atol=.01):
         raise RuntimeError('STL dimensions do not match requested X/Y/Z.')
     if flat:
         new_order = {'x':(1,2,0), 'y':(0,2,1), 'z':(0,1,2)}[axis]
         mesh.vertices = mesh.vertices[:,new_order]
-        mesh.fix_normals()
+        mesh.fix_normals(multibody=False)
     if not mesh.is_watertight or not mesh.is_winding_consistent:
         raise RuntimeError('Watertight/winding STL verification failed.')
     return mesh
