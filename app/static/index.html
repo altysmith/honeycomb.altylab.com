@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#101925"><title>Honeycomb Studio | Altylab</title>
+<style>
+:root{font:16px system-ui,-apple-system,Segoe UI,sans-serif;color:#eaf0f6;background:#0b111b}*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(circle at 100% 0,#173944,transparent 42%),#0b111b;min-height:100vh}
+header{padding:24px max(20px,calc((100vw - 1100px)/2));background:#101925;border-bottom:1px solid #2b394a;font-weight:800;letter-spacing:.06em}
+header span{color:#50e0cd}main{max-width:1100px;margin:auto;padding:28px 18px}
+h1{font-size:clamp(28px,4vw,42px);margin-bottom:8px}h2{font-size:18px;margin:0 0 20px}
+p{color:#a9bfcb;line-height:1.55}.layout{display:grid;grid-template-columns:minmax(300px,365px) 1fr;gap:20px;margin-top:24px}
+.card{border:1px solid #2c4151;background:#14212e;border-radius:14px;padding:22px}
+label{display:block;color:#bcd0dc;font-size:13px;font-weight:650;margin:16px 0 7px}
+input,select{background:#0b1723;border:1px solid #365160;border-radius:8px;padding:12px;color:#eaf9fa;font:inherit;width:100%}
+input:focus,select:focus{outline:2px solid #4ddccc}.three,.two{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.two{grid-template-columns:repeat(2,1fr)}
+button{font:inherit;font-weight:700;border:0;border-radius:8px;padding:13px;cursor:pointer}button:disabled{opacity:.45;cursor:not-allowed}
+.primary{background:#50dcca;color:#09222a}.secondary{background:#263c4c;color:#dcf5f0;border:1px solid #3c6170}
+.full{width:100%;margin-top:16px}.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:17px}
+.preview{background:#0c1822;border:1px solid #34505b;min-height:320px;border-radius:10px;display:flex;align-items:center;justify-content:center;padding:18px;overflow:hidden}
+.preview svg{width:100%;max-height:370px;filter:drop-shadow(5px 7px 6px #0007)}.preview svg path{fill:#55d7c5}
+small{color:#93aebc}summary{color:#55d7c5;font-weight:700;cursor:pointer;margin:18px 0 8px}
+.status{margin:16px 0;padding:12px;background:#203a45;border-left:3px solid #50dcca;border-radius:4px;font-size:13px;line-height:1.5}
+.status.error{border-color:#ff9075;background:#3a2227;color:#ffd3c6}
+.stats{display:flex;flex-wrap:wrap;gap:12px;margin:14px 0}.stats div{background:#0b1822;padding:12px;border-radius:8px}
+.stats b{display:block;margin-top:4px}footer{margin:26px 0;color:#7792a5;font-size:12px}
+.check{display:flex;gap:8px;align-items:center;margin:16px 0}.check input{width:auto}.check label{margin:0}
+@media(max-width:800px){.layout{grid-template-columns:1fr}.preview{min-height:230px}.card{padding:17px}}
+</style>
+</head><body><header>ALTYLAB <span>/ HONEYCOMB STUDIO</span></header>
+<main><h1>Build a better honeycomb.</h1>
+<p>Generate custom honeycomb panels with exact Bambu Studio dimensions. Preview your pattern and download a watertight STL or optional SVG. Free, no account required.</p>
+<div class="layout">
+<section class="card"><h2>Panel settings</h2><form id="design">
+<label>Dimensions · X / Y / Z in millimeters</label><div class="three">
+<input id="x" aria-label="X in mm" type="number" min=".1" max="256" step="any" value="170" required>
+<input id="y" aria-label="Y in mm" type="number" min=".1" max="256" step="any" value="120" required>
+<input id="z" aria-label="Z in mm" type="number" min=".1" max="256" step="any" value="3" required></div>
+<p><small>The smallest dimension is automatically interpreted as thickness unless you choose an axis.</small></p>
+<label for="thickness_axis">Thickness axis</label><select id="thickness_axis"><option value="auto">Automatic (smallest)</option><option value="x">X</option><option value="y">Y</option><option value="z">Z</option></select>
+<label for="style">Pattern</label><select id="style"><option value="bin">Compact — 10 mm opening</option><option value="clean">Clean — 18 mm opening</option><option value="large">Large — 18 mm opening</option></select>
+<details><summary>Advanced geometry settings</summary>
+<div class="two"><div><label for="hole_size">Hex opening (mm)</label><input id="hole_size" type="number" min=".1" max="100" step="any" placeholder="Preset default"></div>
+<div><label for="rib">Rib gap (mm)</label><input id="rib" type="number" min=".1" max="50" step="any" placeholder="Preset default"></div></div>
+<label for="border">Solid outer border (mm)</label><input id="border" type="number" min="0" max="60" step="any" placeholder="Preset default">
+<p><small>Hex opening is point-to-point; zero border keeps a minimal half-rib edge.</small></p></details>
+<div class="check"><input id="flat" type="checkbox"><label for="flat">Lay flat for printing (thickness on Z)</label></div>
+<button id="update" class="secondary full" type="submit">Update preview</button></form></section>
+<section class="card"><h2>Pattern preview</h2><p><small>Exact face geometry used in the generated STL. Download checks watertightness and bounds.</small></p>
+<div id="preview" class="preview"><small>Preparing preview…</small></div>
+<div class="stats"><div><small>Openings</small><b id="holes">—</b></div><div><small>Hex size</small><b id="hole">—</b></div><div><small>STL X × Y × Z</small><b id="dims">—</b></div></div>
+<div class="status" id="notice" role="status">Enter dimensions and update preview.</div>
+<div class="actions"><button class="primary" id="stl" disabled>Download STL</button><button class="secondary" id="svg" disabled>Download SVG</button></div>
+<p><small>STL doesn't contain filament colors or slicer presets. Import into Bambu Studio as a new object and confirm dimensions before slicing.</small></p>
+</section></div><footer>Altylab Honeycomb Studio · Based on Honeycomb 3D Design v0.7.0 · Files aren't stored on the server.</footer></main>
+<script>
+const ids=['x','y','z','thickness_axis','style','hole_size','rib','border','flat'];
+const el=id=>document.getElementById(id); let current=null;
+function values(){const o={};for(const id of ids){const e=el(id);o[id]=e.type==='checkbox'?e.checked:e.type==='number'?(e.value.trim()===''?null:Number(e.value)):e.value}return o}
+function error(message){current=null;el('stl').disabled=true;el('svg').disabled=true;el('notice').className='status error';el('notice').textContent=message}
+async function fail(r){try{const j=await r.json();return Array.isArray(j.detail)?j.detail.map(x=>x.loc.at(-1)+': '+x.msg).join('; '):String(j.detail||r.statusText)}catch{return 'HTTP '+r.status}}
+async function preview(){
+ const data=values(),btn=el('update');if(['x','y','z'].some(id=>!(data[id]>0))){error('X, Y, and Z must be positive.');return}
+ btn.disabled=true;try{
+ const r=await fetch('/api/preview',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+ if(!r.ok)throw Error(await fail(r));const j=await r.json();
+ const doc=new DOMParser().parseFromString(j.svg,'image/svg+xml');const svg=doc.documentElement;
+ if(svg.localName!=='svg')throw Error('Server returned an invalid SVG');
+ svg.removeAttribute('width');svg.removeAttribute('height');el('preview').replaceChildren(document.importNode(svg,true));
+ el('holes').textContent=j.holes.toLocaleString();el('hole').textContent=j.hole_size+' mm';el('dims').textContent=j.output.join(' × ');
+ el('notice').className='status';el('notice').textContent='Face: '+j.face.join(' × ')+' mm; thickness axis '+j.axis.toUpperCase()+'.'+(j.fallback?' Compact 6 mm opening fallback used.':'');
+ current=data;el('stl').disabled=false;el('svg').disabled=false;
+ }catch(e){error(e.message)}finally{btn.disabled=false}
+}
+async function download(kind){
+ if(!current)return;const btn=el(kind),old=btn.textContent;btn.disabled=true;btn.textContent='Generating…';
+ try{const r=await fetch('/api/download/'+kind,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(current)});
+ if(!r.ok)throw Error(await fail(r));const blob=await r.blob(),header=r.headers.get('Content-Disposition')||'';
+ const name=(header.match(/filename="([^"]+)"/)||[])[1]||'honeycomb.'+kind;
+ const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),3000);
+ }catch(e){error(e.message)}finally{btn.textContent=old;btn.disabled=!current}
+}
+el('design').addEventListener('submit',e=>{e.preventDefault();preview()});
+el('stl').addEventListener('click',()=>download('stl'));el('svg').addEventListener('click',()=>download('svg'));
+for(const id of ids)el(id).addEventListener('change',()=>{if(current){current=null;el('stl').disabled=true;el('svg').disabled=true;el('notice').textContent='Settings changed. Update preview before downloading.'}});
+preview();
+</script></body></html>
