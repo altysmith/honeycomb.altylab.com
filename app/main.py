@@ -1,5 +1,6 @@
 """Honeycomb Altylab API. No persistent user files, no account required."""
 import asyncio
+import re
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from fastapi import FastAPI, HTTPException
@@ -24,6 +25,22 @@ class Design(BaseModel):
     rib: float | None = Field(default=None, gt=0, le=50)
     border: float | None = Field(default=None, ge=0, le=60)
     flat: bool = False
+    filename: str | None = Field(default=None, max_length=1024)
+
+
+def download_filename(custom: str | None, fallback: str, kind: str) -> str:
+    """Return an ASCII basename safe for a quoted download header on any OS."""
+    if not custom or not custom.strip():
+        return fallback
+    basename = re.split(r'[\\/]', custom)[-1].strip()
+    basename = re.sub(r'\.(?:stl|svg)$', '', basename, flags=re.IGNORECASE)
+    basename = re.sub(r'[^A-Za-z0-9 _-]+', '_', basename)
+    basename = re.sub(r'\s*_\s*', '_', basename).strip(' _-')[:80].rstrip(' _-')
+    if not basename:
+        return fallback
+    if basename.upper() in {'CON', 'PRN', 'AUX', 'NUL', *(f'COM{i}' for i in range(1, 10)), *(f'LPT{i}' for i in range(1, 10))}:
+        basename = 'honeycomb_' + basename
+    return f'{basename}.{kind}'
 
 def info_for(d):
     return layout_info(d.x,d.y,d.z,d.thickness_axis,d.style,d.hole_size,d.rib,d.border)
@@ -52,7 +69,8 @@ async def download(kind: str, d: Design):
     except ValueError as exc:
         raise HTTPException(422,str(exc))
     dims = {'x':(d.y,d.z,d.x),'y':(d.x,d.z,d.y),'z':(d.x,d.y,d.z)}[i['axis']] if d.flat else (d.x,d.y,d.z)
-    fname = ('honeycomb_'+'_'.join(f'{a}{v:g}' for a,v in zip('XYZ',dims))+('_flat' if d.flat else '')+'.'+kind)
+    fallback = ('honeycomb_'+'_'.join(f'{a}{v:g}' for a,v in zip('XYZ',dims))+('_flat' if d.flat else '')+'.'+kind)
+    fname = download_filename(d.filename, fallback, kind)
     headers = {'Content-Disposition':f'attachment; filename="{fname}"', 'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}
     if kind == 'svg':
         return Response(svg_string(i),media_type='image/svg+xml',headers=headers)

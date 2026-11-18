@@ -50,6 +50,8 @@ small{color:#93aebc}summary{color:#55d7c5;font-weight:700;cursor:pointer;margin:
 <div id="preview" class="preview"><small>Preparing preview…</small></div>
 <div class="stats"><div><small>Openings</small><b id="holes">—</b></div><div><small>Hex size</small><b id="hole">—</b></div><div><small>STL X × Y × Z</small><b id="dims">—</b></div></div>
 <div class="status" id="notice" role="status">Enter dimensions and update preview.</div>
+<label for="filename">File name (optional)</label><input id="filename" type="text" maxlength="80" autocomplete="off" placeholder="Use dimensions in file name">
+<p><small>Choose a name before downloading; .stl or .svg is added automatically.</small></p>
 <div class="actions"><button class="primary" id="stl" disabled>Download STL</button><button class="secondary" id="svg" disabled>Download SVG</button></div>
 <p><small>STL doesn't contain filament colors or slicer presets. Import into Bambu Studio as a new object and confirm dimensions before slicing.</small></p>
 </section></div><footer>Altylab Honeycomb Studio · Based on Honeycomb 3D Design v0.7.0 · Files aren't stored on the server.</footer></main>
@@ -74,7 +76,7 @@ async function preview(){
 }
 async function download(kind){
  if(!current)return;const btn=el(kind),old=btn.textContent;btn.disabled=true;btn.textContent='Generating…';
- try{const r=await fetch('/api/download/'+kind,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(current)});
+ try{const r=await fetch('/api/download/'+kind,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...current,filename:el('filename').value})});
  if(!r.ok)throw Error(await fail(r));const blob=await r.blob(),header=r.headers.get('Content-Disposition')||'';
  const name=(header.match(/filename="([^"]+)"/)||[])[1]||'honeycomb.'+kind;
  const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),3000);

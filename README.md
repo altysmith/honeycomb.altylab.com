@@ -26,6 +26,7 @@ Use `deploy/nginx.conf` as a starting point for your existing Nginx server. Poin
 - Centered full through-holes
 - STL export with dimensional and watertightness checks
 - SVG preview and optional SVG export
+- Optional custom download filename for STL and SVG (extension added automatically)
 - Flat-on-bed output orientation option
 
 SVG represents a 2D face only; 3D thickness must be set in Bambu Studio.
